@@ -1,0 +1,6 @@
+GET  http://localhost:2800/coin_news
+
+
+//upload_coins
+//saved_coins
+//delete_coins

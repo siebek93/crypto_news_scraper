@@ -1,0 +1,116 @@
+
+<html>
+<head>
+    <title>Scraper Mymarketcall</title>
+    <meta name="Siebe" content="Scraping">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+</head>
+
+<body>
+    <h1>Scraper Mymarketcall</h1>
+    
+    <button class="button button4" onClick="window.location.reload();">Refresh</button>
+    <button class="button button5">Store in database</button>
+    <button class="button button6">Delete database</button>
+
+    <div class="w3-card-4"></div>
+  
+  
+    <script>
+
+
+        async function RefreshQuery(url="http://localhost:2800/news")
+        {
+           const resp =  await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type':'application/json',
+                },  
+            });
+        }
+
+        function Elnew(type,attrs={}){
+            const el = document.createElement(type);
+        
+        for (let attr in attrs){
+            const value = attrs[attr];
+            if (attr == 'innerText') el.innerText=value;
+            else el.setAttribute(attr,value);
+        }
+        return el;
+    }
+
+async function loadNews(port){
+    const res = await fetch (`http://localhost:${port}/news`);
+    const news = await res.json();
+    
+    const ctr = document.querySelector('.w3-card-4');
+   
+    Object.entries(news).forEach(entry => {
+        const [key, value] = entry;
+        
+        Object.entries(value).forEach(coin_entry => {
+            const [coin_key, coin_value] = coin_entry;
+
+            const card = Elnew('div', {class:'card'});
+            ctr.appendChild(card);
+
+            const coin_name = Elnew('h1',{innerText:coin_key});
+            const event = Elnew('p',{innerText:coin_value[0]});
+            const dat = Elnew('p',{innerText:coin_value[2]});
+            const cat = key;
+            card.appendChild(coin_name);
+            card.appendChild(event); 
+            card.appendChild(dat); 
+            card.setAttribute("style", `background-image: url(${coin_value[1]});background-repeat: no-repeat;background-size: 388px 388px"`);
+            ctr.appendChild(card);
+
+         }); 
+
+    }); 
+
+      
+          
+   
+    
+}
+
+
+    loadNews(2800);
+    
+    </script>
+
+<style>
+.container {
+    display: flex;
+}
+
+.card {
+    margin: 30px;
+    padding: 30px;
+    border: 3px solid white;
+}
+
+.button {
+  background-color: royalblue; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+}
+  .button5 {background-color: #555555;}
+  .button4 {background-color: #20135c;}
+  .button4 {background-color: #10725c;}
+
+
+
+
+</style>
+
+</body>
+
+</html>
