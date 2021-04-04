@@ -1,4 +1,4 @@
-GET  http://localhost:2800/coin_news
+GET  http://localhost:2800/upload_coins
 
 
 //upload_coins

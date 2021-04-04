@@ -20,19 +20,21 @@ const CoinTelegraph = {
     let re = /\([^)]*\)|\b[A-Z]{3,}\b/g
     coin_tel = Array.from(document.querySelectorAll('span[class=post-card-inline__title]'),e=>e.innerText.match(re));
     coin_news = Array.from(document.querySelectorAll('p[class=post-card-inline__text]'),e=>e.innerText);
-    
-  var result = {};
+    coin_date = Array.from(document.querySelectorAll('time[class="post-card-inline__date"]'), e => e.innerText);
+    coin_views = Array.from(document.querySelectorAll('span[class="post-card-inline__stats-item"]'), e => e.innerText);
+
+    var result = {};
     for (let i in coin_tel ){
       if (coin_tel[i] != null)
         {
-         result[coin_tel[i]] = coin_news[i];
+         result[coin_tel[i]] = [coin_news[i],coin_date[i],coin_views[i]];
         }
     };
 
     return result;
 
 })
-    console.log(data)
+//console.log(data)
 
 return data;
 },
@@ -88,25 +90,24 @@ const CoinMarketCal = {
         }
 
     var result = {};
-    coin_title.forEach((coin, i) => result[coin] = [event[i],image_url[i],date[i],coin_title[i].split(/[()]+/)[1]]);
-
-
-
+    for (let i in coin_title ){
+      if (coin_title[i] != null)
+        {
+         result[coin_title[i].split(/[()]+/)[1]] = [event[i],image_url[i],date[i],coin_title[i]];
+        }
+    };
     
 
-    return {
-        result
-    }
-    });
+    return result
+  });
+  //console.log(data)
+
     return data;
-   
     },
 
     
     
 };
-
-console.log(CoinTelegraph.scraping());
 
 module.exports = {CoinMarketCal,CoinTelegraph};
 
