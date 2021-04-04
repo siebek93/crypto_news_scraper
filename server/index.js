@@ -8,8 +8,7 @@ const {CoinMarketCal,CoinTelegraph }= require('./pageScraper')
 const CoinModel = require('../models/db')
 const mongoose = require("mongoose");
 
-
-const URlMon = "mongodb+srv://siebek1993:Welkom01@cluster0.3ivfo.mongodb.net/Coin-Database?retryWrites=true&w=majority";
+const URlMon = process.env.Mongo;
 
 mongoose.connect(URlMon,{useUnifiedTopology: true,useNewUrlParser: true})
     .then((succes) => {
