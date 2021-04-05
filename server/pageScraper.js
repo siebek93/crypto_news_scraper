@@ -8,7 +8,7 @@ const CoinTelegraph = {
   url : "https://cointelegraph.com/tags/cryptocurrencies",
 
 
-  async scraping(){
+  async scrape(){
     let browser = await puppet.launch({headless:true})
     let page = await browser.newPage();
     console.log(`getting ${this.url}`);
@@ -51,7 +51,7 @@ const CoinMarketCal = {
     //function
 
     
-    async scraper(){
+    async scrape(){
     let browser = await puppet.launch({headless:true})
     let page = await browser.newPage();
     console.log(`getting ${this.url}`);

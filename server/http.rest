@@ -1,4 +1,4 @@
-GET  http://localhost:2800/upload_coins
+GET  http://localhost:2800/saved_coins
 
 
 //upload_coins

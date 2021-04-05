@@ -15,15 +15,14 @@ mongoose.connect(process.env.MONG,{useUnifiedTopology: true,useNewUrlParser: tru
         console.log("error",err)
     });
 
-const news_entry = (news) => { //possibly turn into array
-        let today = new Date();
+const news_entry = (news,obj,today) => {
+        console.log(`Inserting data for ${obj.url}`)
         Object.entries(news).forEach(entry => {
             const [coin_nam, coin_news] = entry;
-          
                         CoinModel.insertMany([
-                            {coin_name:coin_nam, coin_array:coin_news}
+                            {coin_name:coin_nam, coin_data:coin_news}
                         ]).then(function(){
-                            console.log(`Data inserted for ${coin_nam}, ${today.toUTCString()}`)
+                            console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
                         }).catch(function(error){
                             console.log(error)      
                         });
@@ -44,8 +43,8 @@ const news_entry = (news) => { //possibly turn into array
 
     app.get('/coin_news', async (req,res) => {
 
-        const CalNews = await CoinMarketCal.scraper()
-        const TelNews = await CoinTelegraph.scraping();
+        const CalNews = await CoinMarketCal.scrape()
+        const TelNews = await CoinTelegraph.scrape();
         res.send([CalNews,TelNews]);
 
     })
@@ -55,37 +54,35 @@ const news_entry = (news) => { //possibly turn into array
 
     app.get("/upload_coins", async(req,res) => {
 
-        const CoinMarket_newspage= await CoinMarketCal.scraper();
-        const TelNews_newspage= await CoinTelegraph.scraping();
+        const CoinMarket_newspage= await CoinMarketCal.scrape();
+        const TelNews_newspage= await CoinTelegraph.scrape();
 
 
-        // let today = new Date();
-        // let endOfToday = new Date();
-        // today.setHours(0,0,0,0)
-        // endOfToday.setHours(23,59,59,999)
-
-        // CoinModel.find({createdAt: {$gt: today.toISOString(), $lt: endOfToday.toISOString()}}, (err, docs) => {
+        let today = new Date();
+        let endOfToday = new Date();
+        today.setHours(8,59) // conventional hours
+        endOfToday.setHours(22,59) // closing before eleven o clock
+        CoinModel.find({createdAt: {$gt: today.toISOString(), $lt: endOfToday.toISOString()}}, (err, docs) => {
             
-        //         //looking for data in between end and beginning of today
-        //     if (docs.length > 1){
-        //         res.send(`data for ${today.toUTCString()} has already been written`)}
+            //looking for data in between end and beginning of today
+            if (docs.length > 1)
+            {
+                res.send(`data for ${today.toLocaleDateString()} has already been written`)
+            }
            
 
-        //         // if no data found then insert in database
-        //    else {
-               
-             
-
-            news_entry(TelNews_newspage);
-            news_entry(CoinMarket_newspage);
-
-            // }
+           // if no data found then insert in database
+           else 
+            {
+                news_entry(TelNews_newspage,CoinTelegraph,today);
+                news_entry(CoinMarket_newspage,CoinMarketCal,today);
+            }
             
             
         });
 
 
-        // });
+         });
 
     app.get("/saved_coins",(req,res) => {
 
@@ -100,10 +97,10 @@ const news_entry = (news) => { //possibly turn into array
 
 
     app.get("/delete_coins",(req,res) => {
-
+        console.log(`Deleting data for ${CoinModel.collection.collectionName}`)
         CoinModel.deleteMany()
         .then((result) => {
-            res.send(`Deleted model ${CoinModel}`);
+            res.send(`Deleted data for ${CoinModel.collection.collectionName}`);
         })
         .catch((err) => {
             res.send("Error encounted");
