@@ -22,11 +22,12 @@ const news_entry = (news,obj,today) => {
                         CoinModel.insertMany([
                             {coin_name:coin_nam, coin_data:coin_news}
                         ]).then(function(){
-                            console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
+                            //console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
                         }).catch(function(error){
                             console.log(error)      
                         });
                  });
+        console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
         return
     }
 

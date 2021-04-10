@@ -2,11 +2,47 @@ const puppet = require("puppeteer");
 
 
 
+const CoinPictures= {
+
+
+  url : "https://cryptologos.cc/",
+
+
+  
+
+  async scrape(){
+      let browser = await puppet.launch({headless:true})
+      let page = await browser.newPage();
+      console.log(`getting pictures`);
+      await page.goto(this.url);
+      
+
+    let data = await page.evaluate(async () => {
+    img = Array.from(document.querySelectorAll('img[class="div-middle-img"]'), e => e.src)
+    coin_name = Array.from(document.querySelectorAll('div[class="div-middle-text"]'), e => e.innerText.match(/\(([^)]+)\)/)[1])
+    var result = {};
+    for (let i in coin_name){
+      if (coin_name[i] != null)
+        {
+        result[coin_name[i]] = img[i];
+        }
+    };
+
+    return result;
+
+  })
+  console.log(data)
+  return data;
+  },
+};
+
+
 const CoinTelegraph = {
 
 
   url : "https://cointelegraph.com/tags/cryptocurrencies",
 
+  pictures: CoinPictures.scrape(),
 
   async scrape(){
     let browser = await puppet.launch({headless:true})
@@ -18,6 +54,8 @@ const CoinTelegraph = {
 
   let data = await page.evaluate(async () => {
     let re = /\([^)]*\)|\b[A-Z]{3,}\b/g
+
+    coin_picture = this.pictures
     coin_tel = Array.from(document.querySelectorAll('span[class=post-card-inline__title]'),e=>e.innerText.match(re));
     coin_news = Array.from(document.querySelectorAll('p[class=post-card-inline__text]'),e=>e.innerText);
     coin_date = Array.from(document.querySelectorAll('time[class="post-card-inline__date"]'), e => e.innerText);
@@ -27,7 +65,7 @@ const CoinTelegraph = {
     for (let i in coin_tel ){
       if (coin_tel[i] != null)
         {
-         result[coin_tel[i]] = [coin_news[i],coin_date[i],coin_views[i]];
+         result[coin_tel[i]] = [coin_news[i],coin_date[i],coin_views[i],coin_picture[coin_tel[i]]];
         }
     };
 
@@ -109,5 +147,7 @@ const CoinMarketCal = {
     
 };
 
+
+console.log(CoinPictures.scrape())
 module.exports = {CoinMarketCal,CoinTelegraph};
 
