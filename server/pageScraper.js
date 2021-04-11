@@ -31,53 +31,53 @@ const CoinPictures= {
     return result;
 
   })
-  console.log(data)
   return data;
   },
 };
+
+
 
 
 const CoinTelegraph = {
 
 
   url : "https://cointelegraph.com/tags/cryptocurrencies",
+  
 
-  pictures: CoinPictures.scrape(),
+
 
   async scrape(){
     let browser = await puppet.launch({headless:true})
     let page = await browser.newPage();
+    let pictures = await CoinPictures.scrape()
     console.log(`getting ${this.url}`);
     await page.goto(this.url);
+
+    let data = await page.evaluate(async () => {
     
+
+      let re = /\([^)]*\)|\b[A-Z]{3,}\b/g
+      coin_tel = coin_tel = Array.from(document.querySelectorAll('span[class=post-card-inline__title]'),e=>e.innerText.replace(/[^a-zA-Z0-9 ]/g, "").match(re));
+      coin_news = Array.from(document.querySelectorAll('p[class=post-card-inline__text]'),e=>e.innerText);
+      coin_date = Array.from(document.querySelectorAll('time[class="post-card-inline__date"]'), e => e.innerText);
+      coin_views = Array.from(document.querySelectorAll('span[class="post-card-inline__stats-item"]'), e => e.innerText);
+      
+    return [coin_tel,coin_news,coin_date,coin_views];
     
-
-  let data = await page.evaluate(async () => {
-    let re = /\([^)]*\)|\b[A-Z]{3,}\b/g
-
-    coin_picture = this.pictures
-    coin_tel = Array.from(document.querySelectorAll('span[class=post-card-inline__title]'),e=>e.innerText.match(re));
-    coin_news = Array.from(document.querySelectorAll('p[class=post-card-inline__text]'),e=>e.innerText);
-    coin_date = Array.from(document.querySelectorAll('time[class="post-card-inline__date"]'), e => e.innerText);
-    coin_views = Array.from(document.querySelectorAll('span[class="post-card-inline__stats-item"]'), e => e.innerText);
-
-    var result = {};
-    for (let i in coin_tel ){
-      if (coin_tel[i] != null)
-        {
-         result[coin_tel[i]] = [coin_news[i],coin_date[i],coin_views[i],coin_picture[coin_tel[i]]];
-        }
-    };
-
-    return result;
-
 })
-//console.log(data)
 
-return data;
-},
+const [coin_t, coin_n,coin_d,coin_v] = data;
+let result_with_pict = {};
+for (let i in coin_t ){
+  if (coin_t[i] != null)
+    {
+      result_with_pict[coin_t[i][0]] = [coin_n[i],coin_d[i],coin_v[i],pictures[coin_t[i][0]]];
+    }
+  };
+  return result_with_pict;
 
-};
+  },
+}
 
 
 
@@ -138,7 +138,6 @@ const CoinMarketCal = {
 
     return result
   });
-  //console.log(data)
 
     return data;
     },
@@ -147,7 +146,6 @@ const CoinMarketCal = {
     
 };
 
-
-console.log(CoinPictures.scrape())
+console.log(CoinTelegraph.scrape())
 module.exports = {CoinMarketCal,CoinTelegraph};
 
