@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>Scraper Mymarketcall</title>
-    <meta name="Siebe" content="Scraping">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <meta name="Crypto" content="Scraping">
+    <link rel="stylesheet" href="style.css">
 
 </head>
 
@@ -42,7 +42,7 @@
     }
 
 async function loadNews(port){
-    const res = await fetch (`http://localhost:${port}/news`);
+    const res = await fetch (`http://localhost:${port}/coin_news`);
     const news = await res.json();
     
     const ctr = document.querySelector('.w3-card-4');
@@ -63,7 +63,8 @@ async function loadNews(port){
             card.appendChild(coin_name);
             card.appendChild(event); 
             card.appendChild(dat); 
-            card.setAttribute("style", `background-image: url(${coin_value[1]});background-repeat: no-repeat;background-size: 388px 388px"`);
+            card.setAttribute("style", `background-image: url(${coin_value[1]});background-repeat: no-repeat;background-size: 300px 300px"`);
+
             ctr.appendChild(card);
 
          }); 
@@ -81,35 +82,7 @@ async function loadNews(port){
     
     </script>
 
-<style>
-.container {
-    display: flex;
-}
 
-.card {
-    margin: 30px;
-    padding: 30px;
-    border: 3px solid white;
-}
-
-.button {
-  background-color: royalblue; /* Green */
-  border: none;
-  color: white;
-  padding: 15px 32px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-}
-  .button5 {background-color: #555555;}
-  .button4 {background-color: #20135c;}
-  .button4 {background-color: #10725c;}
-
-
-
-
-</style>
 
 </body>
 

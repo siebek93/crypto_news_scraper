@@ -50,6 +50,7 @@ const news_entry = (news,obj,today) => {
 
     })
 
+   
 
 
 

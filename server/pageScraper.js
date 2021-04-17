@@ -71,7 +71,7 @@ let result_with_pict = {};
 for (let i in coin_t ){
   if (coin_t[i] != null)
     {
-      result_with_pict[coin_t[i][0]] = [coin_n[i],coin_d[i],coin_v[i],pictures[coin_t[i][0]]];
+      result_with_pict[coin_t[i][0]] = [coin_n[i],pictures[coin_t[i][0]],coin_d[i],coin_v[i]];
     }
   };
   return result_with_pict;
@@ -146,6 +146,5 @@ const CoinMarketCal = {
     
 };
 
-console.log(CoinTelegraph.scrape())
 module.exports = {CoinMarketCal,CoinTelegraph};
 
