@@ -1,6 +1,5 @@
 const puppet = require("puppeteer");
-
-
+ import {coinPrice} from "./price_get"
 
 const CoinPictures= {
 
@@ -57,7 +56,7 @@ const CoinTelegraph = {
     
 
       let re = /\([^)]*\)|\b[A-Z]{3,}\b/g
-      coin_tel = coin_tel = Array.from(document.querySelectorAll('span[class=post-card-inline__title]'),e=>e.innerText.replace(/[^a-zA-Z0-9 ]/g, "").match(re));
+      coin_tel  = Array.from(document.querySelectorAll('span[class=post-card-inline__title]'),e=>e.innerText.replace(/[^a-zA-Z0-9 ]/g, "").match(re));
       coin_news = Array.from(document.querySelectorAll('p[class=post-card-inline__text]'),e=>e.innerText);
       coin_date = Array.from(document.querySelectorAll('time[class="post-card-inline__date"]'), e => e.innerText);
       coin_views = Array.from(document.querySelectorAll('span[class="post-card-inline__stats-item"]'), e => e.innerText);
@@ -70,8 +69,8 @@ const [coin_t, coin_n,coin_d,coin_v] = data;
 let result_with_pict = {};
 for (let i in coin_t ){
   if (coin_t[i] != null)
-    {
-      result_with_pict[coin_t[i][0]] = [coin_n[i],pictures[coin_t[i][0]],coin_d[i],coin_v[i]];
+    {// add coin price , maybe return from function?
+      result_with_pict[coin_t[i][0]] = [coin_n[i],pictures[coin_t[i][0]],coin_d[i],coin_v[i], coinPrice([i])];
     }
   };
   return result_with_pict;
