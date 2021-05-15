@@ -4,6 +4,7 @@ const ccxt = require('ccxt')
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { base } = require('../models/db');
+const dfd = require("danfojs-node")
 
 
 const BinanceClient = 
@@ -62,16 +63,6 @@ const run = async(coin,Client,seconds) => {
     }
 })();
 
-
-
-
-const GetPrices = (async () => {
-    const prices = await BinanceClient.fetchOHLCV('BTC/USDT', timeframe='1m', since=undefined, limit=undefined, params=
-
-    {});
-})();
-
-
     //     // use ids here
     const market_price = asset / base;
     const sell_price = market_price * (1+spread);
@@ -102,7 +93,31 @@ const GetPrices = (async () => {
     //}
     
 
-console.log(run("BTC", BinanceClient,20));
+
+    const GetPrices = (async () => {
+        const prices = await BinanceClient.fetchOHLCV('BTC/USDT'
+        , timeframe='1m'
+        , since=undefined
+        , limit=undefined
+        , params= {}
+        );
+        const todate = (x) => {
+            x[0] = new Date(x[0]).toISOString()
+            return x
+        }
+        let prices_time_stamped = prices.map(todate)
+
+        const df = new dfd.DataFrame(prices_time_stamped,{columns: ["time","Open","High","Low","Close","volume" ]});
+        let sub_df = df.loc({columns: ["time","Close",'volume']})
+        console.log(sub_df.print());
+    
+    
+    })();
+
+console.log(GetPrices)
+
+
+// console.log(run("BTC", BinanceClient,20));
 
 
 
