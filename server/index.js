@@ -3,9 +3,10 @@
 const express = require('express')
 const app = express()
 const port = 2800
-const {CoinMarketCal,CoinTelegraph }= require('./pageScraper')
+const {CoinMarketCal,CoinTelegraph,CoinMarketCap }= require('./pageScraper')
 const CoinModel = require('../models/db')
 const mongoose = require("mongoose");
+//const { coinmarketcap } = require('ccxt')
 
 
 mongoose.connect(process.env.MONG,{useUnifiedTopology: true,useNewUrlParser: true})
@@ -44,10 +45,11 @@ const news_entry = (news,obj,today) => {
 
     app.get('/coin_news', async (req,res) => {
 
-        const CalNews = await CoinMarketCal.scrape()
+        const CalNews = await CoinMarketCal.scrape();
         const TelNews = await CoinTelegraph.scrape();
-        res.send([CalNews,TelNews]);
-
+        const CapNews = await CoinMarketCap.scrape();
+        console.log([CalNews,TelNews,CapNews])
+        res.send([CalNews,TelNews,CapNews]);
     })
 
    
@@ -56,8 +58,10 @@ const news_entry = (news,obj,today) => {
 
     app.get("/upload_coins", async(req,res) => {
 
-        const CoinMarket_newspage= await CoinMarketCal.scrape();
+        const CoinMarketCal_newspage= await CoinMarketCal.scrape();
         const TelNews_newspage= await CoinTelegraph.scrape();
+        const CoinMarketCap_newspage= await CoinMarketCap.scrape();
+
 
 
         let today = new Date();
@@ -77,7 +81,9 @@ const news_entry = (news,obj,today) => {
            else 
             {
                 news_entry(TelNews_newspage,CoinTelegraph,today);
-                news_entry(CoinMarket_newspage,CoinMarketCal,today);
+                news_entry(CoinMarketCal_newspage,CoinMarketCal_newspage,today);
+                news_entry(CoinMarketCap_newspage,CoinMarketCap,today);
+
             }
             
             
