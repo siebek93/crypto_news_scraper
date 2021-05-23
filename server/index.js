@@ -3,15 +3,17 @@
 const express = require('express')
 const app = express()
 const port = 2800
-const {CoinMarketCal,CoinTelegraph,CoinMarketCap }= require('./pageScraper')
+const {CoinMarketCal,Coinloop,CoinMarketCap }= require('./pageScraper')
 const CoinModel = require('../models/db')
 const mongoose = require("mongoose");
-//const { coinmarketcap } = require('ccxt')
+const { Compare } = require('./compare_prices')
+const bodyParser = require('body-parser')
+
 
 
 mongoose.connect(process.env.MONG,{useUnifiedTopology: true,useNewUrlParser: true})
     .then((succes) => {
-        console.log("succes")})
+        console.log("succesfully connected")})
     .catch((err) => {
         console.log("error",err)
     });
@@ -32,7 +34,7 @@ const news_entry = (news,obj,today) => {
         return
     }
 
-
+    app.use(bodyParser.json())
 
     app.use((req,res,next) =>{
         res.append('Access-Control-Allow-Origin', ['*']);
@@ -46,20 +48,25 @@ const news_entry = (news,obj,today) => {
     app.get('/coin_news', async (req,res) => {
 
         const CalNews = await CoinMarketCal.scrape();
-        const TelNews = await CoinTelegraph.scrape();
+        const TelNews = await Coinloop.scrape();
         const CapNews = await CoinMarketCap.scrape();
-        console.log([CalNews,TelNews,CapNews])
-        res.send([CalNews,TelNews,CapNews]);
-    })
 
-   
+        const total_news = [CapNews,TelNews,CalNews]
+        total_news.forEach(
+            obj => console.log(Object.keys(obj))
+          )
+       
+        res.send([CalNews,TelNews,CapNews]);
+
+
+    })
 
 
 
     app.get("/upload_coins", async(req,res) => {
 
         const CoinMarketCal_newspage= await CoinMarketCal.scrape();
-        const TelNews_newspage= await CoinTelegraph.scrape();
+        const TelNews_newspage= await Coinloop.scrape();
         const CoinMarketCap_newspage= await CoinMarketCap.scrape();
 
 
@@ -80,7 +87,7 @@ const news_entry = (news,obj,today) => {
            // if no data found then insert in database
            else 
             {
-                news_entry(TelNews_newspage,CoinTelegraph,today);
+                news_entry(TelNews_newspage,Coinloop,today);
                 news_entry(CoinMarketCal_newspage,CoinMarketCal_newspage,today);
                 news_entry(CoinMarketCap_newspage,CoinMarketCap,today);
 

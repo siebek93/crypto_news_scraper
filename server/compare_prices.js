@@ -23,14 +23,14 @@ const current_coin_prices = async (ticker = null, print_single = false) => {
 
     $('.table').each((i, elem) => {
         let coins = $(elem).find('div.center').children("a.d-lg-none").text().split('\n').filter(item => item);
+        let names = $(elem).find('div.center').children("a.tw-hidden").text().split('\n').filter(item => item)
         let price = $(elem).find('td.td-price').text().split('\n').filter(item => item);
         // obj[coins] = price
         for (let i = 0; i < coins.length; i++) {
-            obj[coins[i]] = parseFloat(price[i].replace(/[^0-9.-]+/g, "")).toFixed(2);
+            obj[coins[i]] = [parseFloat(price[i].replace(/[^0-9.-]+/g, "")).toFixed(2),names[i]];
         }
 
         if (!(ticker)) { ticker = 'BTC' }// standard ticker}
-
 
 
     });
@@ -42,6 +42,8 @@ const current_coin_prices = async (ticker = null, print_single = false) => {
     }
 }
 
+
+console.log(current_coin_prices())
 
 const mockrun = async (coin, Client, seconds) => {
     Client.set_sandbox_mode(true) // set sandbox mode = true to use testnet
@@ -104,25 +106,52 @@ const GetPrices = async (coin) => {
 
 
 
-const Compare = (async (coin) => {
+const Compare = (async (coin, print = false) => {
     const tickersAndCurrent_price = await current_coin_prices(coin, false)
     const ind = GetPrices;
+    tickers_to_buy = {}
+    tickers_to_sell = {}
+
     for (let tick of Object.keys(tickersAndCurrent_price)) {
         let sma_20 = await ind(tick).catch(e => { `binance does not have market symbol ${tick}/USDT` })
-        if (sma_20 < tickersAndCurrent_price[tick]) {
 
-            console.log(`\x1b[31mSMA: ${String(sma_20)} <\t Current ${tickersAndCurrent_price[tick]}`);
-            console.log(`SMA LOWER then current price for ${tick}, (overbought) do not buy..... \x1b[0m`)
+        if (print) {
+
+            //sell here
+            if (sma_20 < tickersAndCurrent_price[tick]) {
+
+                console.log(`\x1b[31mSMA: ${String(sma_20)} <\t Current ${tickersAndCurrent_price[tick]}`);
+                console.log(`SMA LOWER then current price for ${tick}, (overbought) do not buy..... \x1b[0m`)
+            }
+
+
+            //buy here
+            else if (sma_20 > tickersAndCurrent_price[tick]) {
+                console.log(`\x1b[32mSMA: ${String(sma_20)} >\t Current ${tickersAndCurrent_price[tick]}`);
+                console.log(`SMA HIGHER then current price for ${tick}, (oversold) BUYBUYBUY \x1b[0m`)
+
+            }
         }
-        else if (sma_20 > tickersAndCurrent_price[tick]) {
-            console.log(`\x1b[32mSMA: ${String(sma_20)} >\t Current ${tickersAndCurrent_price[tick]}`);
-            console.log(`SMA HIGHER then current price for ${tick}, (oversold) BUYBUYBUY \x1b[0m`)
-            
+        else {
+             //sell here
+            if (sma_20 < tickersAndCurrent_price[tick]) {
+                tickers_to_sell[tick] = [tickersAndCurrent_price[tick],sma_20];
+                
+            }
+            //buy here
+            else if (sma_20 > tickersAndCurrent_price[tick]) {
+                tickers_to_buy[tick] = [tickersAndCurrent_price[tick],sma_20];
+
+            }
         }
     }
+
+   return [tickers_to_buy,tickers_to_sell]
 })();
 
+
 console.log(Compare);
+
 
 
 

@@ -1,7 +1,5 @@
 const puppet = require("puppeteer");
 
-// const {Compare }= require('./compare_prices')
-
 const CoinPictures = {
 
 
@@ -35,10 +33,10 @@ const CoinPictures = {
 };
 
 
-const CoinTelegraph = {
+const Coinloop = {
 
 
-  url: "https://cointelegraph.com/tags/cryptocurrencies",
+  url: "https://coinloop.io/cryptocurrency-calendar",
 
 
 
@@ -46,46 +44,38 @@ const CoinTelegraph = {
   async scrape() {
     let browser = await puppet.launch({ headless: true })
     let page = await browser.newPage();
-    let pictures = await CoinPictures.scrape()
     console.log(`getting ${this.url}`);
     await page.goto(this.url);
-
-
-
 
 
     await page.waitForSelector('a', {
       visible: true,
     });
-    let dat = await page.content()
 
-    console.log(dat)
     let data = await page.evaluate(async () => {
 
 
-      let re = /\([^)]*\)|\b[A-Z]{3,}\b/g
-      coin_tel = Array.from(document.querySelectorAll('span[class=post-card-inline__title]'), e => e.innerText.replace(/[^a-zA-Z0-9 ]/g, "").match(re));
-      coin_news = Array.from(document.querySelectorAll('p[class=post-card-inline__text]'), e => e.innerText);
-      coin_date = Array.from(document.querySelectorAll('time[class="post-card-inline__date"]'), e => e.innerText);
-      coin_views = Array.from(document.querySelectorAll('span[class="post-card-inline__stats-item"]'), e => e.innerText);
+      coin_tel = Array.from(document.querySelectorAll('div[class="ant-card-body"] span strong'), e => e.innerText);
+      coin_news = Array.from(document.querySelectorAll('div[class="ant-row"] strong'), e => e.innerText).filter((x, i) => i % 2);
+      coin_date = Array.from(document.querySelectorAll('div[class="ant-card-body"] span strong'), e => e.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.querySelector('h2').innerText)
+      coin_pictures = Array.from(document.querySelectorAll('div[class="_38LDCI8yWWJOtFSaR8_Yz3"] img'), e => e.src)
 
-
-      return [coin_tel, coin_news, coin_date, coin_views];
-
-    })
-    console.log(data)
-    const [coin_t, coin_n, coin_d, coin_v] = data;
-    let result_with_pict = {};
-    for (let i in coin_t) {
-      if (coin_t[i] != null) {// add coin price , maybe return from function?
-        result_with_pict[coin_t[i][0]] = [coin_n[i], pictures[coin_t[i][0]], coin_d[i], coin_v[i]]; // , coinPrice([i])];
-      }
-    };
+      let result = {}
+      for (let i in coin_tel) {
+        if (coin_tel[i] != null) {
+          result[coin_tel[i]] = [coin_news[i], coin_pictures[i], coin_date[i]]
+        }
+      };
     console.log(`succesfully retrieved data from ${this.url}`)
-    return result_with_pict;
+    return result
+  });
+  return data;
+},
 
-  },
+
 }
+
+    
 
 
 const CoinMarketCap = {
@@ -192,7 +182,6 @@ const CoinMarketCal = {
           result[coin_title[i].split(/[()]+/)[1]] = [event[i], image_url[i], date[i], coin_title[i],];
         }
       };
-      //console.log(`succesfully retrieved data from ${this.url}`)
       return result
     });
     return data;
@@ -202,7 +191,6 @@ const CoinMarketCal = {
 
 };
 
-// console.log(CoinTelegraph.scrape())
 
-// module.exports = {CoinMarketCal, CoinTelegraph,CoinMarketCap };
+module.exports = {CoinMarketCal, Coinloop,CoinMarketCap };
 
