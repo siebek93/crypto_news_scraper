@@ -3,127 +3,143 @@
 const express = require('express')
 const app = express()
 const port = 2800
-const {CoinMarketCal,Coinloop,CoinMarketCap }= require('./pageScraper')
+const { CoinMarketCal, Coinloop, CoinMarketCap } = require('./pageScraper')
 const CoinModel = require('../models/db')
 const mongoose = require("mongoose");
-const { Compare } = require('./compare_prices')
+const { Compare, current_coin_prices } = require('./compare_prices')
 const bodyParser = require('body-parser')
 
 
 
-mongoose.connect(process.env.MONG,{useUnifiedTopology: true,useNewUrlParser: true})
+mongoose.connect(process.env.MONG, { useUnifiedTopology: true, useNewUrlParser: true })
     .then((succes) => {
-        console.log("succesfully connected")})
-    .catch((err) => {
-        console.log("error",err)
-    });
-
-const news_entry = (news,obj,today) => {
-        console.log(`Inserting data for ${obj.url}`)
-        Object.entries(news).forEach(entry => {
-            const [coin_nam, coin_news] = entry;
-                        CoinModel.insertMany([
-                            {coin_name:coin_nam, coin_data:coin_news}
-                        ]).then(function(){
-                            //console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
-                        }).catch(function(error){
-                            console.log(error)      
-                        });
-                 });
-        console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
-        return
-    }
-
-    app.use(bodyParser.json())
-
-    app.use((req,res,next) =>{
-        res.append('Access-Control-Allow-Origin', ['*']);
-        res.append('Access-Control-Allow-Methods', 'GET,POST');
-        res.append('Access-Control-Allow-Headers', 'Content-Type');
-        next();
-    });
-
-
-
-    app.get('/coin_news', async (req,res) => {
-
-        const CalNews = await CoinMarketCal.scrape();
-        const TelNews = await Coinloop.scrape();
-        const CapNews = await CoinMarketCap.scrape();
-
-        const total_news = [CapNews,TelNews,CalNews]
-        total_news.forEach(
-            obj => console.log(Object.keys(obj))
-          )
-       
-        res.send([CalNews,TelNews,CapNews]);
-
-
+        console.log("succesfully connected")
     })
+    .catch((err) => {
+        console.log("error", err)
+    });
 
-
-
-    app.get("/upload_coins", async(req,res) => {
-
-        const CoinMarketCal_newspage= await CoinMarketCal.scrape();
-        const TelNews_newspage= await Coinloop.scrape();
-        const CoinMarketCap_newspage= await CoinMarketCap.scrape();
-
-
-
-        let today = new Date();
-        let endOfToday = new Date();
-        today.setHours(8,59) // conventional hours
-        endOfToday.setHours(22,59) // closing before eleven o clock
-        CoinModel.find({createdAt: {$gt: today.toISOString(), $lt: endOfToday.toISOString()}}, (err, docs) => {
-            
-            //looking for data in between end and beginning of today
-            if (docs.length > 1)
-            {
-                res.send(`data for ${today.toLocaleDateString()} has already been written`)
-            }
-           
-
-           // if no data found then insert in database
-           else 
-            {
-                news_entry(TelNews_newspage,Coinloop,today);
-                news_entry(CoinMarketCal_newspage,CoinMarketCal_newspage,today);
-                news_entry(CoinMarketCap_newspage,CoinMarketCap,today);
-
-            }
-            
-            
+const news_entry = (news, obj, today) => {
+    console.log(`Inserting data for ${obj.url}`)
+    Object.entries(news).forEach(entry => {
+        const [coin_nam, coin_news] = entry;
+        CoinModel.insertMany([
+            { coin_name: coin_nam, coin_data: coin_news }
+        ]).then(function () {
+            //console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
+        }).catch(function (error) {
+            console.log(error)
         });
+    });
+    console.log(`Data inserted for ${obj.url}, ${today.toUTCString()}`)
+    return
+}
+
+app.use(bodyParser.json())
+
+app.use((req, res, next) => {
+    res.append('Access-Control-Allow-Origin', ['*']);
+    res.append('Access-Control-Allow-Methods', 'GET,POST');
+    res.append('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+});
 
 
-         });
+const Scraper = async () => {
 
-    app.get("/saved_coins",(req,res) => {
+    const CalNews = await CoinMarketCal.scrape();
+    const TelNews = await Coinloop.scrape();
+    const CapNews = await CoinMarketCap.scrape();
+    
+    return [CalNews, TelNews, CapNews]
 
-            CoinModel.find()
-            .then((result) => {
-                res.send(result);
-            })
-            .catch((err) => {
-                res.send(err);
-            })
-        });
+}
+
+app.get('/coin_news', async (req, res) => {
+
+    const src = await Scraper()
+    res.send(src);
+
+    }
+)
 
 
-    app.get("/delete_coins",(req,res) => {
-        console.log(`Deleting data for ${CoinModel.collection.collectionName}`)
-        CoinModel.deleteMany()
+app.get('/coins_compared', async (req, res) => {
+    
+    //then get all of the coins that heave either buying or selling potential
+    const src = await Scraper()
+
+    const CompareCoins = await Compare;
+    let buyList = CompareCoins.map(obj => Object.entries(obj).flat(3))[0];
+    let sellList = CompareCoins.map(obj => Object.entries(obj).flat(3))[1];
+
+    // //after that compare the two lists with eachother and output to console
+    buylist_eval = []
+    selllist_eval = []
+
+    src.forEach(
+        //obj => console.log(`Buy these:  ${Object.keys(obj).filter(e => buyList.indexOf(e) !== -1)}` , `\nSell these: ${Object.keys(obj).filter(e => sellList.indexOf(e) !== -1)} `))
+        obj => buylist_eval.push(Object.keys(obj).filter(e => buyList.indexOf(e) !== -1)), obj => selllist_eval.push(Object.keys(obj).filter(e => sellList.indexOf(e) !== -1))
+    )
+
+
+    res.send([buylist_eval.flat(2), buylist_eval.flat(3)]);
+
+
+}
+)
+
+
+
+app.get("/upload_coins", async (req, res) => {
+    let today = new Date();
+    let endOfToday = new Date();
+    today.setHours(8, 59) // conventional hours
+    endOfToday.setHours(22, 59) // closing before eleven o clock
+    CoinModel.find({ createdAt: { $gt: today.toISOString(), $lt: endOfToday.toISOString() } }, (err, docs) => {
+
+        //looking for data in between end and beginning of today
+        if (docs.length > 1) {
+            res.send(`data for ${today.toLocaleDateString()} has already been written`)
+        }
+
+
+        // if no data found then insert in database
+        else {
+            news_entry(TelNews_newspage, Coinloop, today);
+            news_entry(CoinMarketCal_newspage, CoinMarketCal_newspage, today);
+            news_entry(CoinMarketCap_newspage, CoinMarketCap, today);
+
+        }
+
+
+    });
+
+
+});
+
+app.get("/saved_coins", (req, res) => {
+
+    CoinModel.find()
+        .then((result) => {
+            res.send(result);
+        })
+        .catch((err) => {
+            res.send(err);
+        })
+});
+
+app.get("/delete_coins", (req, res) => {
+    console.log(`Deleting data for ${CoinModel.collection.collectionName}`)
+    CoinModel.deleteMany()
         .then((result) => {
             res.send(`Deleted data for ${CoinModel.collection.collectionName}`);
         })
         .catch((err) => {
             res.send("Error encounted");
         })
-    });
+});
 
-
-
-    app.listen(port, () => {
-        console.log(`Listening at http://localhost:${port}`)
-    })
+app.listen(port, () => {
+    console.log(`Listening at http://localhost:${port}`)
+})
