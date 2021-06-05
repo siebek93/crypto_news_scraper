@@ -4,6 +4,7 @@
 const needle = require('needle');
 const dotenv = require('dotenv');
 const { Compare, current_coin_prices } = require("./compare_prices")
+const dfd = require("danfojs-node")
 
 
 dotenv.config();
@@ -13,11 +14,12 @@ dotenv.config();
 // export BEARER_TOKEN='YOUR-TOKEN'
 const token = process.env.TWIT_BEARER;
 
-const endpointUrl = "https://api.twitter.com/2/tweets/search/recent";
+const endpoints = ['users', 'tweets']
+
+const endpointUrl = `https://api.twitter.com/2/${endpoints[1]}/search/recent`;
 
 
-
-async function getTweets(params) {
+async function getEndpoint(params) {
 
     const res = await needle('get', endpointUrl, params, {
         headers: {
@@ -33,38 +35,58 @@ async function getTweets(params) {
     }
 }
 
+
+
 (async () => {
 
     try {
 
-        const params = {
+        const params_tweet = {
             'query': `#BTC`,
-            'tweet.fields': 'text,created_at', // add date here
+            'expansions': 'author_id',
+            'tweet.fields': 'text,created_at',
+            'user.fields': 'name',
             'max_results': 10,
         }
 
-                    
+
+
         const coins = await current_coin_prices(null, false)
         let tickers = Object.keys(coins)
 
         // Add list of coins and count of tweets per day, look for significant rises
-        
-        
-        for (i = 0; i <= tickers.length; i++) {
 
+
+            
+        const df = new dfd.DataFrame({ columns: ["day", "Coin", "Count", "Retweets(SUM)", "Close", "Volume"] });
+        let sma_value = SMA.calculate({ period: 20, values: sub_df["Close"].tail(20).values })
+
+        for (i = 0; i <= tickers.length; i++) {
+            counted = 0
             console.log(` \x1b[31m Getting #${tickers[i]} \x1b[0m`)
             while (true) {
-                params['query'] = `#${tickers[i]}`;
-                console.log(params['query'])
                 
-                let response = await getTweets(params);
+                params_tweet['query'] = `#${tickers[i]}`;
+
+                let response = await getEndpoint(params_tweet);
+                params_tweet['next_token'] = response["meta"]["next_token"]
                 
-                params['next_token'] = response["meta"]["next_token"]
-                console.log(response['data'][1]['text']);
+                let coins_mentioned = response['data'][1]['text'].match(/#[A-Z]{3,10}/g);
+                let date = response['data'][1]['created_at'].split("T")[0];
+                let user = response['includes']['users'][1]['username'];
                 
-                if (!(params['next_token'])) {
+                if (coins_mentioned != null && coins_mentioned.includes(`#${tickers[i]}`) == true ){
+                    counted+=1;
+                    console.log(`Counted ${tickers[i]} ${counted} times`)
+                }
+
+
+                if (!(params_tweet['next_token'])) {
                     console.log(`No more tweets to get for ${tickers[i]} \n Waiting 20 seconds`)
+                    console.log(`Total count of ${tickers[i]}: ${counted}`)
+                    
                     await new Promise(r => setTimeout(r, 20000));
+                    continue
                     //console.log(`Amount of tweets for #${tickers[i]}: ${response.length}`)
 
                 }
