@@ -3,8 +3,10 @@
 
 const needle = require('needle');
 const dotenv = require('dotenv');
-const { Compare, current_coin_prices } = require("./compare_prices")
-const dfd = require("danfojs-node")
+const { Compare, current_coin_prices } = require(process.cwd()+'\\compare_prices')
+const dfd = require("danfojs-node");
+const { data } = require('cheerio/lib/api/attributes');
+const fs = require('fs');
 
 
 dotenv.config();
@@ -14,14 +16,14 @@ dotenv.config();
 // export BEARER_TOKEN='YOUR-TOKEN'
 const token = process.env.TWIT_BEARER;
 
-const endpoints = ['users', 'tweets']
+const userNamesEndPoint = `https://api.twitter.com/2/users/by?usernames=`;
+let influencers = fs.readFileSync('list_of_influencers.txt', 'utf8').toString();
 
-const endpointUrl = `https://api.twitter.com/2/${endpoints[1]}/search/recent`;
 
 
-async function getEndpoint(params) {
+async function getEndpoint(url, params) {
 
-    const res = await needle('get', endpointUrl, params, {
+    const res = await needle('get', url, params, {
         headers: {
             "User-Agent": "v2RecentSearchJS",
             "authorization": `Bearer ${token}`
@@ -36,64 +38,72 @@ async function getEndpoint(params) {
 }
 
 
-
 (async () => {
 
     try {
 
-        const params_tweet = {
-            'query': `#BTC`,
-            'expansions': 'author_id',
-            'tweet.fields': 'text,created_at',
-            'user.fields': 'name',
-            'max_results': 10,
+        const params_influencers = {
+            usernames: influencers, // Edit usernames to look up
+            "user.fields": "created_at,description", // Edit optional query parameters here
+            "expansions": "pinned_tweet_id"
+        }
+
+        const params_tweets = {
+            "max_results": 100,
+            "tweet.fields": "created_at",
+            "expansions": "author_id"
         }
 
 
+        //const coins = await current_coin_prices(null, false)
+        //const tickers = Object.keys(coins)
+        const df = new dfd.DataFrame({ columns: ["Day", "Coin", "Count", "Retweets(SUM)", "Username"] });
 
-        const coins = await current_coin_prices(null, false)
-        let tickers = Object.keys(coins)
+        let users = await getEndpoint(userNamesEndPoint, params_influencers);
+        coins_mentioned_tot = []
+        for (let user of users["data"]) {
 
-        // Add list of coins and count of tweets per day, look for significant rises
+            console.log(`Getting tweets for ${user['username']}`);
 
-
-            
-        const df = new dfd.DataFrame({ columns: ["day", "Coin", "Count", "Retweets(SUM)", "Close", "Volume"] });
-        let sma_value = SMA.calculate({ period: 20, values: sub_df["Close"].tail(20).values })
-
-        for (i = 0; i <= tickers.length; i++) {
-            counted = 0
-            console.log(` \x1b[31m Getting #${tickers[i]} \x1b[0m`)
-            while (true) {
-                
-                params_tweet['query'] = `#${tickers[i]}`;
-
-                let response = await getEndpoint(params_tweet);
-                params_tweet['next_token'] = response["meta"]["next_token"]
-                
-                let coins_mentioned = response['data'][1]['text'].match(/#[A-Z]{3,10}/g);
-                let date = response['data'][1]['created_at'].split("T")[0];
-                let user = response['includes']['users'][1]['username'];
-                
-                if (coins_mentioned != null && coins_mentioned.includes(`#${tickers[i]}`) == true ){
-                    counted+=1;
-                    console.log(`Counted ${tickers[i]} ${counted} times`)
-                }
-
-
-                if (!(params_tweet['next_token'])) {
-                    console.log(`No more tweets to get for ${tickers[i]} \n Waiting 20 seconds`)
-                    console.log(`Total count of ${tickers[i]}: ${counted}`)
+            let tweets = await getEndpoint(`https://api.twitter.com/2/users/${user['id']}/tweets`, params_tweets);
+            dict = {}
+            try {
+                tweets['data'].forEach(tweet => {
                     
-                    await new Promise(r => setTimeout(r, 20000));
-                    continue
-                    //console.log(`Amount of tweets for #${tickers[i]}: ${response.length}`)
+                    let coins_mentioned = tweet['text'].match(/\$[A-Za-z]{3,6}/g);
+                    let date = tweet['created_at'].split("T")[0];
+                    if (coins_mentioned !== null) {
+                        dict[date] = coins_mentioned.map(coins => coins.toLowerCase())
+                        coins_mentioned_tot.push(dict) 
+                    }
 
-                }
+                });
+
+            } catch (error) {
+                console.log(error)
+                console.log(`No more tweets to get for ${user['username']} \n Waiting 20 seconds`)
             }
+
         }
+
+
+        const result = {}
+        for (let i = 0; i < coins_mentioned_tot.length; i++) {
+            console.log(Object.keys(coins_mentioned_tot[i]));}
+        // for(const {datum, coins} of coins_mentioned_tot.flat(3)) {
+        //     // if(!result[datum]) result[datum] = [];
+        //     // result[datum].push({coins });
+        //   }
+
+        // let coins_m = {};
+        // flat_coins_array = coins_mentioned_tot.flat()
+        // for (let i = 0; i < flat_coins_array.length; i++) {
+        //     coins_m[flat_coins_array[i]] = (coins_m[flat_coins_array[i]] || 0) + 1;
+        // }
+        // console.log(coins_m);
+
     } catch (e) {
-        console.log(e);
+        console.log(e, 'No more tweets to get');
     }
     process.exit();
 })();
