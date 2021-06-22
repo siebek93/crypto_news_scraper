@@ -1,6 +1,9 @@
 import pandas as pd
-from collections import defaultdict
+import seaborn as sns
+import matplotlib.pyplot as plt
 
+
+# test datasets
 d =     [('2021-06-02','$BTC', 1),
             ('2021-07-02','$sqg', 2),
             ('2021-07-03','$SQG', 2),
@@ -17,6 +20,8 @@ djson = [['2021-06-02','$BTC', 1],
         ['2021-06-08','$BTC', 5]]
        
 
+
+# add to javacript
 # let final_arr = [];
 
 # for (var key in dict) {
@@ -27,8 +32,8 @@ djson = [['2021-06-02','$BTC', 1],
 
 # console.log(final_arr)
 
-     
-def to_df(data):
+#to dataframe
+def to_df(self,data):
     # data = tuple(map(tuple, data))
 
     df = pd.DataFrame(data,columns=['date', 'tick', 'count'])
@@ -39,3 +44,24 @@ def to_df(data):
     return df
 
 print(to_df(djson))
+
+
+#plotting dataframe
+def analyze_df(self,df):
+    df = df.melt(df.reset_index(), id_vars='index', var_name='tickers',  value_name='counts')
+
+    g = sns.catplot(x="index", y="counts", hue='tickers', data=df, kind='point')
+    plt.show()
+
+    return 
+
+def top_mentioned(self,df,days,max=False):
+    df_change = df.apply(lambda x: x/x.shift(1).fillna(0))
+    df_change = df_change(days)
+    max_change = df_change.max(axis=1)
+
+    if max:
+        return f' max change occurred on {max_change} for coin {df_change.idxmax(axis=1)}'
+    max_value = df_change.apply(lambda x: x.argmax(), axis=1)
+    print(f' max change = {max_value}')
+    return df_change
